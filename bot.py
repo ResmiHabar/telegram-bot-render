@@ -1,7 +1,7 @@
+
 import os
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 # Log ayarları
 logging.basicConfig(
@@ -10,13 +10,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Bot token'ı - Render environment variable'dan al
+# Bot token'ı
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 # /start komutu
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def start(update, context):
     user = update.message.from_user
-    await update.message.reply_text(
+    update.message.reply_text(
         f'Merhaba {user.first_name}! 👋\n'
         f'Ben Render.com üzerinde çalışan bir botum!\n\n'
         f'🎉 **Bot başarıyla çalışıyor!**\n\n'
@@ -27,8 +27,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # /help komutu
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
+def help_command(update, context):
+    update.message.reply_text(
         '🤖 **Kullanılabilir Komutlar:**\n'
         '/start - Botu başlat\n'
         '/help - Yardım mesajı\n'
@@ -37,54 +37,61 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # /info komutu
-async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def info(update, context):
     user = update.message.from_user
-    await update.message.reply_text(
+    username = user.username if user.username else "yok"
+    update.message.reply_text(
         f'📊 **Bot Bilgileri:**\n'
         f'• Kullanıcı ID: {user.id}\n'
         f'• Ad: {user.first_name}\n'
-        f'• Kullanıcı Adı: @{user.username if user.username else "yok"}\n'
+        f'• Kullanıcı Adı: @{username}\n'
         f'• Host: Render.com\n'
         f'• Durum: 🟢 Çalışıyor'
     )
 
 # Normal mesajlara cevap
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def handle_message(update, context):
     text = update.message.text.lower()
     
     if 'merhaba' in text or 'selam' in text:
-        await update.message.reply_text('Merhaba! Nasılsın? 😊')
+        update.message.reply_text('Merhaba! Nasılsın? 😊')
     elif 'teşekkür' in text or 'sağol' in text:
-        await update.message.reply_text('Rica ederim! 🤗')
+        update.message.reply_text('Rica ederim! 🤗')
     elif 'görüşürüz' in text or 'bye' in text:
-        await update.message.reply_text('Görüşürüz! 👋')
+        update.message.reply_text('Görüşürüz! 👋')
     else:
-        await update.message.reply_text('Mesajını aldım! 🎯')
+        update.message.reply_text('Mesajını aldım! 🎯')
 
 # Hata yönetimi
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    logger.error(f'Exception while handling an update: {context.error}')
+def error(update, context):
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def main():
     try:
-        # Bot uygulamasını oluştur
-        application = Application.builder().token(TOKEN).build()
+        # Updater oluştur
+        updater = Updater(TOKEN, use_context=True)
+        
+        # Dispatcher'ı al
+        dp = updater.dispatcher
 
         # Handler'ları ekle
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(CommandHandler("info", info))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(CommandHandler("info", info))
+        dp.add_handler(MessageHandler(Filters.text, handle_message))
         
         # Hata handler
-        application.add_error_handler(error_handler)
+        dp.add_error_handler(error)
 
         # Botu başlat
         logger.info("🤖 Bot başlatılıyor...")
         print("Bot polling başlatıldı!")
         
         # Polling başlat
-        application.run_polling()
+        updater.start_polling()
+        
+        # Botu çalışır durumda tut
+        updater.idle()
         
     except Exception as e:
         logger.error(f"Bot başlatılamadı: {e}")
@@ -92,3 +99,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
