@@ -10,7 +10,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Bot token'ı
+# Bot token'ı - Render environment variable'dan al
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 # /start komutu
@@ -19,10 +19,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f'Merhaba {user.first_name}! 👋\n'
         f'Ben Render.com üzerinde çalışan bir botum!\n\n'
-        f'🤖 **Kullanılabilir Komutlar:**\n'
+        f'🎉 **Bot başarıyla çalışıyor!**\n\n'
+        f'🤖 Kullanılabilir Komutlar:\n'
         f'/start - Botu başlat\n'
         f'/help - Yardım\n'
-        f'/echo [mesaj] - Mesajını tekrar ederim\n'
         f'/info - Bot bilgileri'
     )
 
@@ -32,18 +32,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         '🤖 **Kullanılabilir Komutlar:**\n'
         '/start - Botu başlat\n'
         '/help - Yardım mesajı\n'
-        '/echo [mesaj] - Yazdığını tekrar eder\n'
         '/info - Bot bilgileri\n\n'
-        'Ayrıca normal mesajlarını da cevaplarım!'
+        'Ben basit bir Telegram botuyum!'
     )
-
-# /echo komutu
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.args:
-        text = ' '.join(context.args)
-        await update.message.reply_text(f'🔁 Sen: {text}')
-    else:
-        await update.message.reply_text('ℹ️ Kullanım: /echo [mesajınız]')
 
 # /info komutu
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -68,11 +59,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif 'görüşürüz' in text or 'bye' in text:
         await update.message.reply_text('Görüşürüz! 👋')
     else:
-        await update.message.reply_text(f'🤖 "{update.message.text}" mesajını aldım!')
+        await update.message.reply_text('Mesajını aldım! 🎯')
 
 # Hata yönetimi
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.error(f'Update {update} caused error {context.error}')
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    logger.error(f'Exception while handling an update: {context.error}')
 
 def main():
     try:
@@ -82,7 +73,6 @@ def main():
         # Handler'ları ekle
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(CommandHandler("echo", echo))
         application.add_handler(CommandHandler("info", info))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         
@@ -90,14 +80,15 @@ def main():
         application.add_error_handler(error_handler)
 
         # Botu başlat
-        print("🤖 Bot polling başlatılıyor...")
-        logger.info("Bot başlatıldı!")
+        logger.info("🤖 Bot başlatılıyor...")
+        print("Bot polling başlatıldı!")
         
         # Polling başlat
         application.run_polling()
         
     except Exception as e:
         logger.error(f"Bot başlatılamadı: {e}")
+        print(f"Bot başlatılamadı: {e}")
 
 if __name__ == '__main__':
     main()
